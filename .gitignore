@@ -1,0 +1,7 @@
+pages
+qa_data*
+__pycache__/
+qa_model*
+venv
+output
+results

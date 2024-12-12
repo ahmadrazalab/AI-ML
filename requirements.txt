@@ -1,0 +1,11 @@
+transformers
+datasets
+torch
+pandas
+scikit-learn
+pip install fastapi
+pip install uvicorn
+pip install transformers
+pip install torch
+pip install sentence-transformers
+pip install pandas
