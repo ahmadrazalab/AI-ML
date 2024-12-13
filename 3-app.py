@@ -2,9 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
-import torch
 import pandas as pd
-from bs4 import BeautifulSoup  # Import BeautifulSoup for HTML parsing
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -13,7 +11,7 @@ app = FastAPI()
 origins = [
     "http://localhost",  # Allow frontend running on localhost
     "http://localhost:3000",  # If your frontend runs on port 3000
-    "http://yourfrontenddomain.com",  # Add your production frontend domain if applicable
+    "https://docs.ahmadraza.in",  # Add your production frontend domain if applicable
 ]
 
 app.add_middleware(
@@ -37,15 +35,15 @@ class QARequest(BaseModel):
 
 # Function to find the most relevant context for a question using Sentence Transformers
 def find_relevant_context(question: str):
-    best_match = None
+    best_matches = []
     max_similarity = -1
 
     # Encode the question into an embedding
     question_embedding = model.encode(question, convert_to_tensor=True)
 
-    # Loop through each row in the dataset and find the most similar context
+    # Loop through each row in the dataset and find the most similar contexts (directories)
     for index, row in qa_data.iterrows():
-        context = str(row['answer'])
+        context = str(row['answer'])  # This is the directory path
         context_embedding = model.encode(context, convert_to_tensor=True)
 
         # Compute the cosine similarity between the question and the context
@@ -53,39 +51,23 @@ def find_relevant_context(question: str):
 
         if similarity > max_similarity:
             max_similarity = similarity
-            best_match = context
+            best_matches = [context]  # Found a new best match
+        elif similarity == max_similarity:
+            best_matches.append(context)  # Add to list if the similarity is the same
 
-    if best_match is None:
+    if not best_matches:
         return "No relevant context found."
 
-    return best_match
-
-# Function to clean up HTML from the answer
-def clean_html(text: str):
-    return BeautifulSoup(text, "html.parser").get_text()
+    return best_matches
 
 # API endpoint to answer a question
 @app.post("/ask")
 def ask_question(request: QARequest):
-    # Find the most relevant context from the custom dataset
+    # Find the most relevant context (directories) for the question
     relevant_context = find_relevant_context(request.question)
 
     if not relevant_context:
         return {"answer": "No relevant context found."}
 
-    # Clean the HTML from the relevant context
-    clean_answer = clean_html(relevant_context)
-
-    # Use the SentenceTransformer model to re-encode the context for a better response
-    context_embedding = model.encode(clean_answer, convert_to_tensor=True)
-    question_embedding = model.encode(request.question, convert_to_tensor=True)
-
-    # Compute the cosine similarity
-    similarity_score = util.pytorch_cos_sim(question_embedding, context_embedding)[0][0].item()
-
-    # If the similarity score is below a threshold, return no valid answer
-    if similarity_score < 0.5:
-        return {"answer": "No valid answer found based on the context."}
-
-    # Return the best matching context as the answer (after cleaning it from HTML)
-    return {"answer": clean_answer}
+    # Return the matching directories
+    return {"answer": ", ".join(relevant_context)}
