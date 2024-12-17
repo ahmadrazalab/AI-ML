@@ -13,7 +13,7 @@ app = FastAPI()
 origins = [
     "http://localhost",  # Allow frontend running on localhost
     "http://localhost:3000",  # If your frontend runs on port 3000
-    "http://yourfrontenddomain.com",  # Add your production frontend domain if applicable
+    "http://docs.ahmadraza.in",  # Add your production frontend domain if applicable
 ]
 
 app.add_middleware(
